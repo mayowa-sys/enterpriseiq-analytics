@@ -1,7 +1,4 @@
-import os
-from dotenv import load_dotenv
-load_dotenv()  # Only needed locally — Railway ignores this
-
+from app.db import db  # This triggers load_dotenv in db.py first
 from fastapi import FastAPI
 from app.routes.analytics import router as analytics_router
 

@@ -1,9 +1,9 @@
 import os
-from fastapi import FastAPI
 from dotenv import load_dotenv
-from app.routes.analytics import router as analytics_router
+load_dotenv()  # Only needed locally — Railway ignores this
 
-load_dotenv()
+from fastapi import FastAPI
+from app.routes.analytics import router as analytics_router
 
 app = FastAPI(
     title="EnterpriseIQ Analytics Service",

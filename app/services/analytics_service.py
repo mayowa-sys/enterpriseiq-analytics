@@ -57,16 +57,11 @@ async def get_staff_utilisation(org_id: str, start_date: str = None, end_date: s
             "$group": {
                 "_id": "$staffId",
                 "totalAppointments": {"$sum": 1},
-                "completedAppointments": {
-                    "$sum": {
-                        "$cond": [{"$eq": ["$status", "completed"]}, 1, 0]
-                    }
-                },
-                "totalMinutesBooked": {
+                "totalMinutes": {
                     "$sum": {
                         "$divide": [
                             {"$subtract": ["$endTime", "$startTime"]},
-                            60000  # Convert ms to minutes
+                            60000
                         ]
                     }
                 }
@@ -81,22 +76,20 @@ async def get_staff_utilisation(org_id: str, start_date: str = None, end_date: s
             }
         },
         {"$unwind": "$staffInfo"},
-        {
-            "$project": {
-                "staffId": {"$toString": "$_id"},
-                "firstName": "$staffInfo.firstName",
-                "lastName": "$staffInfo.lastName",
-                "email": "$staffInfo.email",
-                "totalAppointments": 1,
-                "completedAppointments": 1,
-                "totalMinutesBooked": {"$round": ["$totalMinutesBooked", 0]}
-            }
-        }
+        {"$sort": {"totalMinutes": -1}}
     ]
 
     results = await db.appointments.aggregate(pipeline).to_list(100)
-    return results
 
+    return [
+        {
+            "staffId": str(r["_id"]),
+            "staffName": f"{r['staffInfo']['firstName']} {r['staffInfo']['lastName']}",
+            "totalAppointments": r["totalAppointments"],
+            "totalHours": round(r["totalMinutes"] / 60, 2)
+        }
+        for r in results
+    ]
 
 async def get_volume_trend(org_id: str) -> list:
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
